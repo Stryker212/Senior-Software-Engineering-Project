@@ -1,4 +1,4 @@
-# Senior-Software-Enginering-Project-
+# Will-Landslide-Come-After-Wildfire
 How Wildfire and Landslide Risk Factors Combined lead to risk factors for both wildfire and landslide in Oregon.
 
 The Team:
