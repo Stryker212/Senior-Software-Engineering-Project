@@ -12,8 +12,7 @@ import contextily as cx
 import pandas as pd
 
 # Path to your local SLIDO geodatabase (.gdb)
-gdb_path = r"C:\Users\umnak\Downloads\SLIDO_Release_4p5_wMetadata.gdb\SLIDO_Release_4p5_wMetadata.gdb"  # ⬅️ change this to your actual path
-
+gdb_path = r"C:\Users\umnak\Downloads\SLIDO_Release_4p5_wMetadata.gdb\SLIDO_Release_4p5_wMetadata.gdb" 
 # Load layer — "Historic_Landslide_Points" contains event data
 gdf = gpd.read_file(gdb_path, layer="Historic_Landslide_Points")
 
