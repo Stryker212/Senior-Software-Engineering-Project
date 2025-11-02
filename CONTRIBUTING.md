@@ -4,8 +4,6 @@ How to set up, code, test, review, and release so contributions meet our Definit
 
 ## Code of Conduct
 
-Reference the project/community behavior expectations and reporting process.
-
 All contributors are expected to:
 - Communicate respectfully in Discord and Outlook
 - Actively listen and provide constructive feedback
@@ -18,17 +16,43 @@ All contributors are expected to:
 
 List prerequisites, setup steps, environment variables/secrets handling, and how to run the app locally.
 
+- Python 3.10
+- *Note* section will be updated as seen fit
+
 ## Branching & Workflow
 
-Describe the workflow (e.g., trunk-based or GitFlow), default branch, branch naming, and when to rebase vs. merge.
+- default branch: main
+- branch naming: 
+    - feature/<description> -> new features
+    - fix/<issue-number>-<description> -> bug fixed
+    - docs/<description> -> documents
+- create a new branch for each task/issue
+- commit often with meaningful messages
+- merge into main only after approval and passing CI
 
 ## Issues & Planning
 
 Explain how to file issues, required templates/labels, estimation, and triage/assignment practices.
+- File issues using GitHub Issues tab and include:
+    - summary of the problem
+    - expected behavior
+    - steps to reproduce issue
+    - assigned member and due date
+- Labels:
+    - bug: defects or malfunctions
+    - improve: improvements or enhancements
+    - feature: new features
+    - docs: README or doc updates
+    - help: needs assistance
+    - question: clarification or research topic 
 
 ## Commit Messages
 
 State the convention (e.g., Conventional Commits), include examples, and how to reference issues.
+- Format:
+    - <type>(scope): short description
+    - example: <feature>(visualization): add wildfire correlation plot
+    - reference related issues with #<issue_number> when applicable
 
 ## Code Style, Linting & Formatting
 
