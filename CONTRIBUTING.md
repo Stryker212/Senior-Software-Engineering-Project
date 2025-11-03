@@ -56,7 +56,6 @@ State the convention (e.g., Conventional Commits), include examples, and how to 
 
 ## Code Style, Linting & Formatting
 
-Name the formatter/linter, config file locations, and the exact commands to check/fix locally.
 - Linter: Pylint
 - Config path: .github/workflows/pylint.yml
 - name: Install dependencies
@@ -69,15 +68,33 @@ Name the formatter/linter, config file locations, and the exact commands to chec
 
 ## Testing
 
-Define required test types, how to run tests, expected coverage thresholds, and when new/updated tests are mandatory.
+- all new or modified code must include tests in the /tests directory
+- run tests with:
+    pytest
+- Requirements:
+    - include unit and integration tests where applicable
+    - maintain at least 80% test coverage
+    - new tests are required for new features and bug fixes
+    - all tests must pass locally and in CI before merge
 
 ## Pull Requests & Reviews
 
 Outline PR requirements (template, checklist, size limits), reviewer expectations, approval rules, and required status checks.
+- All contributions must go through a PR
+- PRs must reference related issue numbers when applicable
+- Each PR must:
+    - pass all CI checks
+    - include updated documentation if needed
+    - receive at least one peer review approval
+- Reviewer expectations:
+    - provide feedback within 48 hours
+    - verify code correctness, readability, and style
+    - confirm all DoD criteria are met
 
 ## CI/CD
 
 Link to pipeline definitions, list mandatory jobs, how to view logs/re-run jobs, and what must pass before merge/release.
+
 
 ## Security & Secrets
 
