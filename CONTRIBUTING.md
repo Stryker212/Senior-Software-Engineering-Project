@@ -111,12 +111,22 @@ Outline PR requirements (template, checklist, size limits), reviewer expectation
 
 ## Documentation Expectations
 
-Specify what must be updated (README, docs/, API refs, CHANGELOG) and docstring/comment standards.
+- All significant code or data change must include:
+    - Updates to README.md (if setup changes)
+    - Added/updated docs if relevant
 
 ## Release Process
 
-Describe versioning scheme, tagging, changelog generation, packaging/publishing steps, and rollback process.
+- Versioning Scheme: MAJOR.MINOR.PATCH
+- Tag releases as v1.0.0, v1.1.0, etc
+- Generate changelog via GitHub Releases
+- Ensure CI/CD passes before tagging a release
+- If a release introduces issues, rollback by reverting to the last stable tag
 
 ## Support & Contact
 
-Provide maintainer contact channel, expected response windows, and where to ask questions.
+- Primary Contacts via Outlook:
+    - Umna Khawaja: khawajau@oregonstate.edu 
+    - Evia Liang: liangev@oregonstate.edu
+    - John Stryker: strykerj@oregonstate.edu 
+- Response Time: Within 24 hours
