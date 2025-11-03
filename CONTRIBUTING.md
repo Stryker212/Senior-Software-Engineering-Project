@@ -16,7 +16,7 @@ All contributors are expected to:
 
 List prerequisites, setup steps, environment variables/secrets handling, and how to run the app locally.
 
-- Python 3.10
+- Python 3.8, 3.9, 3.10
 - *Note* section will be updated as seen fit
 
 ## Branching & Workflow
@@ -57,6 +57,15 @@ State the convention (e.g., Conventional Commits), include examples, and how to 
 ## Code Style, Linting & Formatting
 
 Name the formatter/linter, config file locations, and the exact commands to check/fix locally.
+- Linter: Pylint
+- Config path: .github/workflows/pylint.yml
+- name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py')
 
 ## Testing
 
