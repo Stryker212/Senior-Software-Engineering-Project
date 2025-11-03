@@ -93,12 +93,21 @@ Outline PR requirements (template, checklist, size limits), reviewer expectation
 
 ## CI/CD
 
-Link to pipeline definitions, list mandatory jobs, how to view logs/re-run jobs, and what must pass before merge/release.
-
+- Configured under .github/workflows
+- Example log: GitHub Actions -> Wildfire Branch
+- Mandatory jobs:
+    - build: install dependencies and run tests
+    - lint: run static analysis
+    - docs: verify docs updated
+- Merge to main is blocked until all jobs pass
 
 ## Security & Secrets
 
-State how to report vulnerabilities, prohibited patterns (hard-coded secrets), dependency update policy, and scanning tools.
+- Never commit sensitive credentials, API keys, or tokens
+- Use .env files locally and keep them in .gitignore
+- Report vulnerabilities privately to any member listed in the README.md file
+- Security checks run automatically through CI using pip-audit
+- dependencies should be reviewed and updated monthly
 
 ## Documentation Expectations
 
