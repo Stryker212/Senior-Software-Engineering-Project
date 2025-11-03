@@ -1,0 +1,2 @@
+in_prog_vis/data/gNATSGO_OR.gdb filter=lfs diff=lfs merge=lfs -text
+data/gNATSGO_OR.gdb/** filter=lfs diff=lfs merge=lfs -text
