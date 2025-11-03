@@ -23,9 +23,9 @@ List prerequisites, setup steps, environment variables/secrets handling, and how
 
 - default branch: main
 - branch naming: 
-    - feature/<description> -> new features
-    - fix/<issue-number>-<description> -> bug fixed
-    - docs/<description> -> documents
+    - feature/&lt;description&gt; -> new features
+    - fix/&lt;issue-number&gt;-&lt;description&gt; -> bug fixed
+    - docs/&lt;description&gt; -> documents
 - create a new branch for each task/issue
 - commit often with meaningful messages
 - merge into main only after approval and passing CI
@@ -50,9 +50,9 @@ Explain how to file issues, required templates/labels, estimation, and triage/as
 
 State the convention (e.g., Conventional Commits), include examples, and how to reference issues.
 - Format:
-    - <type>(scope): short description
-    - example: <feature>(visualization): add wildfire correlation plot
-    - reference related issues with #<issue_number> when applicable
+    - &lt;type&gt;(scope): short description
+    - example: &lt;feature&gt;(visualization): add wildfire correlation plot
+    - reference related issues with #&lt;issue_number&gt; when applicable
 
 ## Code Style, Linting & Formatting
 
@@ -62,7 +62,7 @@ State the convention (e.g., Conventional Commits), include examples, and how to 
       run: |
         python -m pip install --upgrade pip
         pip install pylint
-    - name: Analysing the code with pylint
+    - name: Analyzing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
 
