@@ -32,11 +32,24 @@ gdf_wildfires = gdf_wildfires.to_crs(epsg=3857) # for basemap
 # load soil data
 gdb_path = "data/gNATSGO_OR.gdb"
 layers = fiona.listlayers(gdb_path)
-#print("available layers:", layers)
-gdf_soil = gpd.read_file(gdb_path, layer="MUPOLYGON", driver="OpenFileGDB", METHOD="SKIP")
-gdf_soil = gdf_soil.to_crs(epsg=3857)
-#print(gdf_soil['MUSYM'].unique())  # see all distinct soil types
-#print(gdf_soil[['MUSYM', 'Shape_Area']].head())  # show a couple rows
+print("available layers:", layers)
+
+# load soil polygon data
+gdf_poly_soil = gpd.read_file(gdb_path, layer="MUPOLYGON", METHOD="SKIP")
+gdf_poly_soil = gdf_poly_soil.to_crs(epsg=3857)
+
+# load DominantComponent data
+gdf_dom_com = gpd.read_file(gdb_path, layer="DominantComponent")
+#print(gdf_dom_com.head())
+#print(gdf_dom_com.columns)
+
+# load component data
+gdf_component = gpd.read_file(gdb_path, layer="component")
+
+#print(gdf_poly_soil['MUSYM'].unique())  # see all distinct soil types
+#print(gdf_poly_soil[['MUSYM', 'Shape_Area']].head())  # show a couple rows
+
+
 
 soil_colors = {
     '31E': '#a6cee3',
@@ -48,13 +61,13 @@ soil_colors = {
     's2226': '#e31a1c'
 }
 
-gdf_soil['color'] = gdf_soil['MUSYM'].map(soil_colors).fillna('lightgreen')
+gdf_poly_soil['color'] = gdf_poly_soil['MUSYM'].map(soil_colors).fillna('lightgreen')
 
 # plot soil polygons then wildfires on top
 fig, ax = plt.subplots(figsize=(12, 8))
-gdf_soil.plot(
+gdf_poly_soil.plot(
     ax=ax, 
-    color=gdf_soil['color'], 
+    color=gdf_poly_soil['color'], 
     edgecolor='black', 
     linewidth=0.1,
     alpha = 0.7
@@ -80,4 +93,4 @@ legend_wildfire = ax.legend(handles=wildfire_patches, title="Wildfire Class", lo
 plt.title("Wildfires over Soil Map")
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
-plt.show()
+# plt.show()
