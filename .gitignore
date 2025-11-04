@@ -37,5 +37,38 @@
 *.out
 *.app
 
-# debug information files
+# Debug information files
 *.dwo
+
+# --- Data management ---
+data/*.zip
+data/*.gdb
+data/*.gpkg
+data/*.tif
+
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+
+# Editors
+.vscode/
+
+# QGIS small aux
+*.aux.xml
+*.qml
+
+# Large or local data we do NOT track
+*.gdb.zip
+*.zip
+gitUpload/
+
+# Local project files
+mapV1.qgz
+
+# --- We DO track these (don't ignore) ---
+# data/*.geojson
+# data/*.csv
+# data/*.png
+# scripts/*.py
+# maps/*.qgz
