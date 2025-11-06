@@ -1,0 +1,2 @@
+geovis_app/data/*.csv filter=lfs diff=lfs merge=lfs -text
+geovis_app/data/*.gdb/** filter=lfs diff=lfs merge=lfs -text
