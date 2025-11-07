@@ -90,7 +90,7 @@ ax.legend(handles=patches, title="Decade", loc="upper left")
 
 # Add base map
 cx.add_basemap(ax, source=cx.providers.OpenStreetMap.Mapnik)
-ax.set_title("Historic Oregon Landslides (Decade + Elevation/Terrain)", fontsize=15)
+ax.set_title("Historic Oregon Landslides (Decade + Elevation)", fontsize=15)
 ax.set_xlabel("Longitude (meters in Web Mercator)")
 ax.set_ylabel("Latitude (meters in Web Mercator)")
 
