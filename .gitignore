@@ -1,3 +1,4 @@
+# ===== C/C++ Build Artifacts =====
 # Prerequisites
 *.d
 
@@ -37,16 +38,11 @@
 *.out
 *.app
 
-# Debug information files
+# Debug info
 *.dwo
 
-# --- Data management ---
-data/*.zip
-data/*.gdb
-data/*.gpkg
-data/*.tif
 
-# Python / tooling
+# ===== Python & Tooling =====
 .venv/
 __pycache__/
 *.pyc
@@ -54,21 +50,28 @@ __pycache__/
 # Editors
 .vscode/
 
-# QGIS small aux
-*.aux.xml
-*.qml
 
-# Large or local data we do NOT track
-*.gdb.zip
-*.zip
-gitUpload/
+# ===== GIS / Data Management =====
+data/*.zip
+data/*.gdb
+data/*.tif
 
-# Local project files
-mapV1.qgz
-
-# --- We DO track these (don't ignore) ---
-# data/*.geojson
+# (We DO track GeoPackage, CSV, PNG, and scripts)
+# so do NOT ignore:
+# data/*.gpkg
 # data/*.csv
 # data/*.png
 # scripts/*.py
-# maps/*.qgz
+
+
+# ===== QGIS / Local Project Files =====
+*.aux.xml
+mapV1.qgz
+gitUpload/
+
+
+# ===== Archives / Misc =====
+*.gz
+*.zip
+*.gdb
+*.aux.xml
