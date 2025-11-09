@@ -69,7 +69,7 @@ def plot_fire_classes(ax=None):
 
 if __name__ == "__main__":
     plot_fire_classes()
-    plt.show()
+    #plt.show()
 
 
 
