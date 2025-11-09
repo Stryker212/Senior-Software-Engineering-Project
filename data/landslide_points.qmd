@@ -1,0 +1,106 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="3.40.12-Bratislava">
+  <identifier>Historic_Landslide_Points</identifier>
+  <parentidentifier></parentidentifier>
+  <language>ENG</language>
+  <type>dataset</type>
+  <title>Historic_Landslide_Points</title>
+  <abstract>DOGAMI compiled this data from several datasets including DOGAMI SP-34 (landslide points from 1996-1997) and SP-53 (1995-2020). Each feature class dataset includes 29 fields. The dataset is a compilation of center points of published or known historic (roughly 1928-2023 in Oregon) landslides and any available information about these landslides including damage and losses and several other attributes. The structure and content of the file feature classes are also detailed in Appendix B of the SLIDO-4.0 report.
+
+Historic Landslide Points, is a compilation of center points of published or known historic (roughly 1928-2023 in Oregon) landslides and any available information about these landslides including damage and losses and several other attributes.
+
+DOGAMI compiled this data from several datasets including DOGAMI SP-34 (landslide points from 1996-1997) and SP-53 (1995-2020). Each feature class dataset includes 29 fields. The dataset is a compilation of center points of published or known historic (roughly 1928-2023 in Oregon) landslides and any available information about these landslides including damage and losses and several other attributes. The structure and content of the file feature classes are also detailed in Appendix B of the SLIDO-4.0 report.
+
+Historic Landslide Points, is a compilation of center points of published or known historic (roughly 1928-2023 in Oregon) landslides and any available information about these landslides including damage and losses and several other attributes. </abstract>
+  <keywords vocabulary="Search keys">
+    <keyword>Surface</keyword>
+    <keyword>North America</keyword>
+    <keyword>Sediment</keyword>
+    <keyword>United States of America</keyword>
+    <keyword>Alluvium</keyword>
+    <keyword>geoscientificinformation</keyword>
+    <keyword>Landslide</keyword>
+    <keyword>Oregon</keyword>
+    <keyword>Soil</keyword>
+  </keywords>
+  <keywords vocabulary="gmd:topicCategory">
+    <keyword>geoscientificinformation</keyword>
+    <keyword>Landslide</keyword>
+    <keyword>geoscientificinformation</keyword>
+    <keyword>Landslide</keyword>
+  </keywords>
+  <contact>
+    <contactAddress>
+      <type>both</type>
+      <address>800 NE Oregon Street Suite 965</address>
+      <city>Portland</city>
+      <administrativearea>Oregon</administrativearea>
+      <postalcode>97232</postalcode>
+      <country>US</country>
+    </contactAddress>
+    <name></name>
+    <organization>Oregon Department of Geology and Mineral Industries</organization>
+    <position></position>
+    <voice>1 971 673 1555</voice>
+    <fax></fax>
+    <email>dogami-info@oregon.gov</email>
+    <role>Point of contact</role>
+  </contact>
+  <contact>
+    <contactAddress>
+      <type>mailing and physical address</type>
+      <address>800 NE Oregon Street Suite 965</address>
+      <city>Portland</city>
+      <administrativearea>Oregon</administrativearea>
+      <postalcode>97232</postalcode>
+      <country>USA</country>
+    </contactAddress>
+    <name>Oregon Department of Geology and Mineral Industries </name>
+    <organization>Oregon Department of Geology and Mineral Industries </organization>
+    <position></position>
+    <voice>1 971 673 1555</voice>
+    <fax>1 971 673 1562</fax>
+    <email>info@dogami.oregon.gov</email>
+    <role>Point of contact</role>
+  </contact>
+  <links/>
+  <history>Data source: </history>
+  <dates>
+    <date value="2023-01-01T00:00:00" type="Published"/>
+  </dates>
+  <fees></fees>
+  <constraints type="Security constraints"></constraints>
+  <constraints type="Limitations of use">REPORT DATA: This product is for informational purposes and may not have been prepared for or be suitable for legal, engineering, or surveying purposes. Users of this information should review or consult the primary data and information sources to ascertain the usability of the information. This publication cannot substitute for site-specific investigations by qualified practitioners. Site-specific data may give results that differ from the results shown in the publication. See the accompanying text report for more details on the limitations of the methods and data used to prepare this publication.</constraints>
+  <constraints type="Access">None</constraints>
+  <rights>Partially funded by the Federal Emergency Management Agency (FEMA) Hazard Mitigation Grant Program (HMGP)</rights>
+  <rights>REPORT DATA: This product is for informational purposes and may not have been prepared for or be suitable for legal, engineering, or surveying purposes. Users of this information should review or consult the primary data and information sources to ascertain the usability of the information. This publication cannot substitute for site-specific investigations by qualified practitioners. Site-specific data may give results that differ from the results shown in the publication. See the accompanying text report for more details on the limitations of the methods and data used to prepare this publication.</rights>
+  <encoding></encoding>
+  <crs>
+    <spatialrefsys nativeFormat="Wkt">
+      <wkt>PROJCRS["NAD83(HARN) / Oregon GIC Lambert (ft)",BASEGEOGCRS["NAD83(HARN)",DATUM["NAD83 (High Accuracy Reference Network)",ELLIPSOID["GRS 1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],ID["EPSG",4152]],CONVERSION["Oregon GIC Lambert (international foot)",METHOD["Lambert Conic Conformal (2SP)",ID["EPSG",9802]],PARAMETER["Latitude of false origin",41.75,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8821]],PARAMETER["Longitude of false origin",-120.5,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8822]],PARAMETER["Latitude of 1st standard parallel",43,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8823]],PARAMETER["Latitude of 2nd standard parallel",45.5,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8824]],PARAMETER["Easting at false origin",1312335.958,LENGTHUNIT["foot",0.3048],ID["EPSG",8826]],PARAMETER["Northing at false origin",0,LENGTHUNIT["foot",0.3048],ID["EPSG",8827]]],CS[Cartesian,2],AXIS["easting (X)",east,ORDER[1],LENGTHUNIT["foot",0.3048]],AXIS["northing (Y)",north,ORDER[2],LENGTHUNIT["foot",0.3048]],USAGE[SCOPE["State-wide spatial data management."],AREA["United States (USA) - Oregon."],BBOX[41.98,-124.6,46.26,-116.47]],ID["EPSG",2994]]</wkt>
+      <proj4>+proj=lcc +lat_0=41.75 +lon_0=-120.5 +lat_1=43 +lat_2=45.5 +x_0=399999.9999984 +y_0=0 +ellps=GRS80 +units=ft +no_defs</proj4>
+      <srsid>959</srsid>
+      <srid>2994</srid>
+      <authid>EPSG:2994</authid>
+      <description>NAD83(HARN) / Oregon GIC Lambert (ft)</description>
+      <projectionacronym>lcc</projectionacronym>
+      <ellipsoidacronym>EPSG:7019</ellipsoidacronym>
+      <geographicflag>false</geographicflag>
+    </spatialrefsys>
+  </crs>
+  <extent>
+    <spatial minz="0" maxx="-116.80351500000000442" maxz="0" crs="EPSG:2994" dimensions="2" miny="41.92932499999999862" maxy="46.27292400000000328" minx="-124.71617799999999932"/>
+    <temporal>
+      <period>
+        <start>2023-01-01T08:00:00Z</start>
+        <end></end>
+      </period>
+    </temporal>
+    <temporal>
+      <period>
+        <start></start>
+        <end></end>
+      </period>
+    </temporal>
+  </extent>
+</qgis>
