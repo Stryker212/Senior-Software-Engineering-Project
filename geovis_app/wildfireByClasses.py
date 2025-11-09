@@ -14,7 +14,8 @@ from shapely.geometry import Point
 import contextily as ctx
 
 def load_wildfire_data():
-    path = os.path.join(os.path.dirname(__file__), "data/ODF_Fire_Occurrence_Data_2000-2022_20251019.csv")
+    wildfire_file = "data/ODF_Fire_Occurrence_Data_2000-2022_20251019.csv"
+    path = os.path.join(os.path.dirname(__file__), wildfire_file)
     df = pd.read_csv(path)
     geometry = [Point(xy) for xy in zip(df['Long_DD'], df['Lat_DD'])]
     gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
@@ -24,8 +25,7 @@ def load_wildfire_data():
 def plot_fire_classes(ax=None):
     gdf = load_wildfire_data()
 
-    # map colors to wildfire classes
-    color_class = { 
+    color_class = { # map colors to wildfire classes
     "A": '#FFFFB2',
     "B": '#FED976',
     "C": '#FEB24C',
