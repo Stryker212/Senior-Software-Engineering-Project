@@ -1,5 +1,7 @@
-# be in geovis_app directory to run -> cd geovis_app
-# python3 wildfirePolygons.py
+"""
+cd geovis_app
+python3 wildfirePolygons.py
+"""
 import os
 import geopandas as gpd
 import matplotlib.pyplot as plt

@@ -1,9 +1,11 @@
-# python3 -m venv path/to/venv
-    # source path/to/venv/bin/activate
-# python3 -m pip install geopandas matplotlib contextily rasterio fiona shapely pyproj
+"""
+python3 -m venv path/to/venv
+source path/to/venv/bin/activate
 
-# be in geovis_app directory to run -> cd geovis_app
-# python3 wildfireByClasses.py
+to run:
+    cd geovis_app
+    python3 wildfireByClasses.py
+"""
 
 import os
 import pandas as pd
@@ -61,7 +63,9 @@ def plot_fire_classes(ax=None):
     ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
 
     # create legend
-    patches = [mpatches.Patch(color=color, label = f"{cls}: {size_ranges[cls]}") for cls, color in color_class.items()]
+    patches = [mpatches.Patch(
+        color=color, label = f"{cls}: {size_ranges[cls]}") 
+        for cls, color in color_class.items()]
     ax.legend(handles=patches, title="Wilfire Class", loc='lower right')
 
     if ax is None:  
