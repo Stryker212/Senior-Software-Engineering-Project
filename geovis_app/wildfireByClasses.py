@@ -2,6 +2,10 @@
     # source path/to/venv/bin/activate
 # python3 -m pip install geopandas matplotlib contextily rasterio fiona shapely pyproj
 
+# be in geovis_app directory to run -> cd geovis_app
+# python3 wildfireByClasses.py
+
+import os
 import pandas as pd
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -10,7 +14,8 @@ from shapely.geometry import Point
 import contextily as ctx
 
 def load_wildfire_data():
-    df = pd.read_csv("geovis_app/data/ODF_Fire_Occurrence_Data_2000-2022_20251019.csv") 
+    path = os.path.join(os.path.dirname(__file__), "data/ODF_Fire_Occurrence_Data_2000-2022_20251019.csv")
+    df = pd.read_csv(path)
     geometry = [Point(xy) for xy in zip(df['Long_DD'], df['Lat_DD'])]
     gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
 
@@ -51,7 +56,7 @@ def plot_fire_classes(ax=None):
         ax=ax,
         color=gdf['color'],
         markersize = 3, # point size
-        alpha = 0.4 # transparency of points
+        alpha = 0.5 # transparency of points
     )
     ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
 
@@ -70,7 +75,3 @@ def plot_fire_classes(ax=None):
 if __name__ == "__main__":
     plot_fire_classes()
     #plt.show()
-
-
-
-
