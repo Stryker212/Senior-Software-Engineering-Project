@@ -52,7 +52,7 @@ def plot_fire_classes(ax=None):
     gdf = gdf.to_crs(epsg=3857) # convert crs for basemap
 
     if ax is None: # create figure and axes if none given
-        fig, ax = plt.subplots(figsize=(10,10))
+        fig, ax = plt.subplots(figsize=(10,10)) # pylint: disable=unused-variable
 
     gdf.plot(
         ax=ax,
@@ -76,6 +76,6 @@ def plot_fire_classes(ax=None):
     
     return ax
 
-if __name__ == "__main__":
-    plot_fire_classes()
+#if __name__ == "__main__":
+    #plot_fire_classes()
     #plt.show()

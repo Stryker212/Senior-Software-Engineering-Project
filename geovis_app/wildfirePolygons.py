@@ -28,8 +28,8 @@ def plot_wildfire_polygons(ax=None):
     gdf = gpd.clip(gdf, oregon)
 
     if ax is None: # create figure and axes if none given
-        fig, ax = plt.subplots(figsize=(10,10))
-
+        fig, ax = plt.subplots(figsize=(10,10)) #
+    
     gdf.plot(
         ax=ax,
         edgecolor="red", # polygon border color
@@ -41,12 +41,12 @@ def plot_wildfire_polygons(ax=None):
 
     if ax is None:  
         plt.title("Wildfire Polygons")
-        plt.xlabel("Longitude")
-        plt.ylabel("Latitude")
+        #plt.xlabel("Longitude")
+        #plt.ylabel("Latitude")
         plt.show()
 
     return ax
 
-if __name__ == "__main__":
-    plot_wildfire_polygons()
+#if __name__ == "__main__":
+    #plot_wildfire_polygons()
     #plt.show()
