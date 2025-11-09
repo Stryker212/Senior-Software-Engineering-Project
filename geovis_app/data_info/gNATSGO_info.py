@@ -1,8 +1,10 @@
-import geopandas as gpd
+"""
+read gNATSGO geodatabase and list layers
+"""
 import fiona 
 
-gdb_path = "../data/gNATSGO_OR.gdb"
-layers = fiona.listlayers(gdb_path)
+GDB_PATH = "../data/gNATSGO_OR.gdb"
+layers = fiona.listlayers(GDB_PATH)
 with open("gNATSGO_info.txt", "w") as f:
     for layer in layers:
         f.write(layer + "\n")
