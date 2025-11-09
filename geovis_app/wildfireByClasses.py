@@ -30,6 +30,17 @@ def plot_fire_classes(ax=None):
     "G": '#BD0026'
     }
 
+    # https://www.researchgate.net/figure/The-NWCG-wildfire-classification-is-based-on-the-size-of-acres-covered-by-the-wildfire_tbl1_381173395
+    size_ranges = {
+        "A": "0.01-0.25 acres",
+        "B": "0.26-9.9 acres",
+        "C": "10.0-99.9 acres",
+        "D": "100-299 acres",
+        "E": "300-999 acres",
+        "F": "1000-4999 acres",
+        "G": ">5000 acres"
+    }
+
     gdf['color'] = gdf['Size_class'].map(color_class) # assign colors
     gdf = gdf.to_crs(epsg=3857) # convert crs for basemap
 
@@ -45,7 +56,7 @@ def plot_fire_classes(ax=None):
     ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik)
 
     # create legend
-    patches = [mpatches.Patch(color=color, label = cls) for cls, color in color_class.items()]
+    patches = [mpatches.Patch(color=color, label = f"{cls}: {size_ranges[cls]}") for cls, color in color_class.items()]
     ax.legend(handles=patches, title="Wilfire Class", loc='lower right')
 
     if ax is None:  
@@ -58,7 +69,7 @@ def plot_fire_classes(ax=None):
 
 if __name__ == "__main__":
     plot_fire_classes()
-    #plt.show()
+    plt.show()
 
 
 
