@@ -4,9 +4,9 @@ read gNATSGO geodatabase and list layers
 import fiona 
 
 GDB_PATH = "../data/gNATSGO_OR.gdb"
-txt_file = "gNATSGO_info.txt"
+TXT_FILE = "gNATSGO_info.txt"
 layers = fiona.listlayers(GDB_PATH)
-with open(txt_file, "w", encoding="utf-8") as f:
+with open(TXT_FILE, "w", encoding="utf-8") as f:
     for layer in layers:
         f.write(layer + "\n")
 
