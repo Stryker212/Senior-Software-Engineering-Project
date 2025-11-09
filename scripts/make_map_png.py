@@ -1,11 +1,10 @@
-# scripts/make_map_png.py
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib.ticker import FuncFormatter, MaxNLocator
-import contextily as cx
-from matplotlib_scalebar.scalebar import ScaleBar
 from pathlib import Path
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter, MaxNLocator
+from matplotlib_scalebar.scalebar import ScaleBar
+import contextily as cx
+import geopandas as gpd
 
 # -----------------------
 # Config / file locations
