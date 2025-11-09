@@ -28,7 +28,7 @@ def plot_wildfire_polygons(ax=None):
     gdf = gpd.clip(gdf, oregon)
 
     if ax is None: # create figure and axes if none given
-        fig, ax = plt.subplots(figsize=(10,10)) #
+        fig, ax = plt.subplots(figsize=(10,10)) # pylint: disable=unused-variable
     
     gdf.plot(
         ax=ax,
