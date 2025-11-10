@@ -1,0 +1,7 @@
+geopandas
+fiona
+pandas
+matplotlib
+shapely
+contextily
+matplotlib-scalebar
