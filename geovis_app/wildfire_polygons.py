@@ -1,6 +1,8 @@
 """
 cd geovis_app
-python3 wildfirePolygons.py
+python3 wildfire_polygons.py
+
+polygons of wildfires > 10 acres in Oregon
 """
 import os
 import geopandas as gpd

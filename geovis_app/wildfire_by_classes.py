@@ -4,7 +4,7 @@ source path/to/venv/bin/activate
 
 to run:
     cd geovis_app
-    python3 wildfireByClasses.py
+    python3 wildfire_by_classes.py
 """
 
 import os

@@ -5,3 +5,5 @@ matplotlib
 shapely
 contextily
 matplotlib-scalebar
+dash
+plotly.graph_objects
