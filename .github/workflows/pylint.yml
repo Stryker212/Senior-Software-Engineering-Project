@@ -22,7 +22,6 @@ jobs:
           # core lint tool
           pip install pylint
           # runtime imports used by your scripts
-          pip install geopandas matplotlib contextily matplotlib-scalebar pandas
           pip install -r requirements.txt
 
       - name: Run pylint on project scripts

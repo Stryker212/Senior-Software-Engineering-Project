@@ -4,3 +4,4 @@ pandas
 matplotlib
 shapely
 contextily
+matplotlib-scalebar
