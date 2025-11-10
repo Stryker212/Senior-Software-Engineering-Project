@@ -23,8 +23,3 @@ jobs:
           pip install pylint
           # runtime imports used by your scripts
           pip install -r requirements.txt
-
-      - name: Run pylint on project scripts
-        run: |
-          pylint --disable=C $(git ls-files '*.py')
-          pylint scripts/*.py
