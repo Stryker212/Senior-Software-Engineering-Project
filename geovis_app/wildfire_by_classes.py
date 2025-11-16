@@ -18,13 +18,29 @@ import contextily as ctx
 def load_wildfire_data():
     wildfire_file = "data/ODF_Fire_Occurrence_Data_2000-2022_20251019.csv"
     path = os.path.join(os.path.dirname(__file__), wildfire_file)
-    df = pd.read_csv(path)
+
+    # validate file exists before reading
+    if not os.path.isfile(path):
+        raise FileNotFoundError(
+            f"Wildfire data file not found at expected path: {path}\n"
+        )
+    df = pd.read_csv(path, encoding="utf-8")
+
+    # ensure columns in CSV exist
+    required_cols = {"Long_DD", "Lat_DD", 'Size_class'}
+    missing = required_cols - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Missing required column(s): {', '.join(missing)}.\n"
+            f"Available columns: {list(df.columns)}"
+        )
+    
     geometry = [Point(xy) for xy in zip(df['Long_DD'], df['Lat_DD'])]
     gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
 
     return gdf
-    
-def plot_fire_classes(ax=None):
+
+def prepare_fire_class_data():
     gdf = load_wildfire_data()
 
     color_class = { # map colors to wildfire classes
@@ -48,9 +64,16 @@ def plot_fire_classes(ax=None):
         "G": ">5000 acres"
     }
 
-    gdf['color'] = gdf['Size_class'].map(color_class) # assign colors
+    gdf['color'] = gdf['Size_class'].map(color_class).fillna('#000000') # assign colors
+    gdf["size_label"] = gdf["Size_class"].map(size_ranges).fillna("Unknown")
     gdf = gdf.to_crs(epsg=3857) # convert crs for basemap
 
+    return gdf, color_class, size_ranges
+
+    
+def plot_fire_classes(ax=None):
+    gdf, color_class, size_ranges = prepare_fire_class_data()
+    
     if ax is None: # create figure and axes if none given
         fig, ax = plt.subplots(figsize=(10,10)) # pylint: disable=unused-variable
 
@@ -76,6 +99,6 @@ def plot_fire_classes(ax=None):
     
     return ax
 
-#if __name__ == "__main__":
-    #plot_fire_classes()
-    #plt.show()
+if __name__ == "__main__":
+    plot_fire_classes()
+    plt.show()
