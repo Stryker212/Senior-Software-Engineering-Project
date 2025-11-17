@@ -6,7 +6,7 @@ import os
 import warnings
 import pandas as pd
 
-# Ignore harmless rasterio warnings
+# Ignore harmless warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)
 
@@ -17,12 +17,18 @@ warnings.filterwarnings('ignore', 'GeoSeries.notna', UserWarning)
 layer_modules = []
 gdfs = []
 
+# Example metadata for each layer
+layer_info = {
+    "sample_wildfires": {"name": "Wildfire Occurrences", "description": "Points where wildfires occurred in Oregon."},
+    "sample_landslides": {"name": "Landslides", "description": "Recorded landslides in Oregon."},
+    # Add more layers with metadata here
+}
+
 for file in os.listdir("layers"):
     if file.endswith(".py") and file != "__init__.py":
         module_name = file[:-3]
         module = importlib.import_module(f"layers.{module_name}")
         gdf = module.load_layer()
-        # Filter out empty or missing geometries
         gdf = gdf[~gdf.geometry.is_empty & gdf.geometry.notna()]
         layer_modules.append(module_name)
         gdfs.append(gdf)
@@ -32,40 +38,28 @@ for file in os.listdir("layers"):
 # ------------------------------------
 fig = go.Figure()
 
-for gdf in gdfs:
+for i, gdf in enumerate(gdfs):
+    info = layer_info.get(layer_modules[i], {})
     fig.add_trace(
-        go.Scattermap(
+        go.Scattermapbox(
             lat=gdf.geometry.y,
             lon=gdf.geometry.x,
             mode="markers",
             marker=dict(size=6),
+            name=info.get("name", layer_modules[i]),  # optional legend name
             visible=False
         )
     )
 
-# Oregon bounding box (default)
-oregon_bounds = {"west": -124.7, "east": -116.5, "south": 41.9, "north": 46.3}
+# Force map to Oregon
+oregon_center = {"lat": 44.0, "lon": -120.5}
+oregon_zoom = 5.5
 
-# Compute bounds from layers if any exist
-if gdfs:
-    all_lats = pd.concat([gdf.geometry.y for gdf in gdfs])
-    all_lons = pd.concat([gdf.geometry.x for gdf in gdfs])
-    bounds = {
-        "west": all_lons.min(),
-        "east": all_lons.max(),
-        "south": all_lats.min(),
-        "north": all_lats.max()
-    }
-else:
-    bounds = oregon_bounds
-
-# Map layout focusing on Oregon
 fig.update_layout(
     mapbox_style="carto-positron",
-    mapbox_center={"lat": 44.0, "lon": -120.5},  # Oregon center
-    mapbox_zoom=6.5,  # Close-in zoom
-    mapbox=dict(bounds=bounds),
-    margin=dict(l=0, r=0, t=0, b=0)
+    mapbox_center=oregon_center,
+    mapbox_zoom=oregon_zoom,
+    margin=dict(l=10, r=10, t=10, b=10)
 )
 
 # ------------------------------------
@@ -74,9 +68,9 @@ fig.update_layout(
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    html.H1("Oregon Multi-Layer Map"),
+    html.H1("Landslides and Wildfires Mapping in Oregon"),
 
-    # Checklist for stacking layers
+    # Checklist for toggling layers
     dcc.Checklist(
         id="layer_select",
         options=[{"label": name, "value": i} for i, name in enumerate(layer_modules)],
@@ -84,26 +78,40 @@ app.layout = html.Div([
         labelStyle={'display': 'block'}
     ),
 
+    # Div that will show metadata about the selected layer
+    html.Div(id="layer_info_div", style={"margin": "10px", "padding": "10px", "border": "1px solid #ccc", "display": "none"}),
+
     dcc.Graph(id="map", figure=fig)
 ])
 
 # ------------------------------------
-# Callback to toggle layers
+# Callback to toggle layers and show layer info
 # ------------------------------------
 @app.callback(
-    dash.Output("map", "figure"),
-    dash.Input("layer_select", "value")
+    [dash.Output("map", "figure"),
+     dash.Output("layer_info_div", "children"),
+     dash.Output("layer_info_div", "style")],
+    [dash.Input("layer_select", "value")]
 )
 def update_map(selected_layers):
-    # hide all layers first
+    # Hide all layers first
     for trace in fig.data:
         trace.visible = False
 
-    # show selected layers
-    for i in selected_layers:
-        fig.data[i].visible = True
+    # Show selected layers
+    info_text = ""
+    if selected_layers:
+        for i in selected_layers:
+            fig.data[i].visible = True
+            layer_name = layer_modules[i]
+            info = layer_info.get(layer_name, {})
+            info_text += f"{info.get('name', layer_name)}: {info.get('description', '')} (Units: {info.get('units', 'N/A')})\n"
 
-    return fig
+        div_style = {"margin": "10px", "padding": "10px", "border": "1px solid #ccc", "whiteSpace": "pre-line", "display": "block"}
+    else:
+        div_style = {"display": "none"}
+
+    return fig, info_text, div_style
 
 # ------------------------------------
 # Run the app

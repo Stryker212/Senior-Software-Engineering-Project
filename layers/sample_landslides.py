@@ -8,8 +8,7 @@ def load_layer():
     """
 
     # --- Path to your GeoJSON file ---
-    #geojson_path = r"C:\data_stryker\wildfire_points_epsg2992.geojson"
-    geojson_path = r"data_stryker/wildfire_points_epsg2992.geojson"
+    geojson_path = r"data_stryker/landslide_points.geojson"
 
     # --- Load GeoJSON into GeoDataFrame ---
     gdf = gpd.read_file(geojson_path)
