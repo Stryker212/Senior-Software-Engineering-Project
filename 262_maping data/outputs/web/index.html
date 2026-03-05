@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Oregon Multi-Layer Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; width: 100%; }
+    .legend {
+      background: white;
+      padding: 10px 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.25);
+      font-family: sans-serif;
+      font-size: 13px;
+      line-height: 1.35;
+      max-width: 340px;
+    }
+    .swatch {
+      display:inline-block;
+      width: 14px;
+      height: 10px;
+      margin-right: 6px;
+      border: 1px solid rgba(0,0,0,0.25);
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script>
+  const map = L.map('map', {
+    center: [44.0, -120.5],
+    zoom: 6
+  });
+
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Groups
+  const wildfireLayer = L.layerGroup();
+  const landslideLayer = L.layerGroup();
+  const gridOutlineLayer = L.layerGroup();
+  const soilOutlineLayer = L.layerGroup();
+  const vegGridLayer = L.layerGroup();
+
+  // Optional raster tile layer
+  const slopeTiles = L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 1.00});
+
+  function addGeoJsonPoints(url, targetLayer, style) {
+    fetch(url)
+      .then(r => r.json())
+      .then(geo => {
+        const gj = L.geoJSON(geo, {
+          pointToLayer: (feature, latlng) => L.circleMarker(latlng, style)
+        });
+        gj.addTo(targetLayer);
+      })
+      .catch(err => console.error("Failed loading", url, err));
+  }
+
+  function addGeoJsonOutlines(url, targetLayer, style) {
+    fetch(url)
+      .then(r => r.json())
+      .then(geo => {
+        const gj = L.geoJSON(geo, { style: style });
+        gj.addTo(targetLayer);
+      })
+      .catch(err => console.error("Failed loading", url, err));
+  }
+
+  // ---- REQ-36 choropleth (veg density) ----
+  function vegColor(d) {
+    if (d == null || isNaN(d)) return '#00000000';
+    if (d < 0.20) return '#f7fcf5';
+    if (d < 0.40) return '#c7e9c0';
+    if (d < 0.60) return '#74c476';
+    if (d < 0.80) return '#238b45';
+    return '#005a32';
+  }
+
+  function addVegChoropleth(url) {
+    fetch(url)
+      .then(r => r.json())
+      .then(geo => {
+        const gj = L.geoJSON(geo, {
+          style: (feature) => {
+            const d = feature.properties.veg_density;
+            return {
+              color: '#111827',
+              weight: 0.6,
+              fillColor: vegColor(d),
+              fillOpacity: 0.55
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const p = feature.properties || {};
+            const pct = (p.veg_pct != null) ? p.veg_pct : (p.veg_density != null ? (p.veg_density*100).toFixed(2) : 'n/a');
+            const fire = (p.fire_count != null) ? p.fire_count : 'n/a';
+            const slide = (p.slide_count != null) ? p.slide_count : 'n/a';
+            layer.bindPopup(
+              `<b>Grid cell</b><br/>
+               Vegetation: <b>${pct}%</b><br/>
+               Fire count: ${fire}<br/>
+               Slide count: ${slide}`
+            );
+          }
+        });
+        gj.addTo(vegGridLayer);
+      })
+      .catch(err => console.error("Failed loading", url, err));
+  }
+
+  // Load layers
+  addGeoJsonPoints('data/wildfires_sample.geojson', wildfireLayer, {
+    radius: 2, color: '#e74c3c', weight: 1, fillOpacity: 0.7
+  });
+
+  addGeoJsonPoints('data/landslides_sample.geojson', landslideLayer, {
+    radius: 2, color: '#3b82f6', weight: 1, fillOpacity: 0.7
+  });
+
+  addGeoJsonOutlines('data/grid_outline.geojson', gridOutlineLayer, {
+    color: '#111827', weight: 1, fillOpacity: 0.0
+  });
+
+  addGeoJsonOutlines('data/soil_outline.geojson', soilOutlineLayer, {
+    color: '#16a34a', weight: 1, fillOpacity: 0.0
+  });
+
+  addVegChoropleth('data/grid_veg_density.geojson');
+
+  // Layer control
+  const overlays = {
+    "Wildfires (sampled points)": wildfireLayer,
+    "Landslides (sampled points)": landslideLayer,
+    "Grid (outline only)": gridOutlineLayer,
+    "Soil polygons (outline only)": soilOutlineLayer,
+    "Vegetation density (grid choropleth)": vegGridLayer
+  };
+
+  if (slopeTiles) overlays["Slope (tiles)"] = slopeTiles;
+
+  L.control.layers({"OpenStreetMap": osm}, overlays, {collapsed: false}).addTo(map);
+
+  // Start visible layers
+  wildfireLayer.addTo(map);
+  landslideLayer.addTo(map);
+  vegGridLayer.addTo(map);
+
+  // Legend
+  const legend = L.control({position: 'bottomleft'});
+  legend.onAdd = function(map) {
+    const div = L.DomUtil.create('div', 'legend');
+    div.innerHTML = `
+      <b>Legend</b><br/>
+      <span style="color:#e74c3c;">●</span> Wildfires<br/>
+      <span style="color:#3b82f6;">●</span> Landslides<br/>
+      <span style="color:#111827;">—</span> Grid outlines<br/>
+      <span style="color:#16a34a;">—</span> Soil outlines<br/>
+      <br/>
+      <b>Vegetation density (REQ-36)</b><br/>
+      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
+      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
+      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
+      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
+      <span class="swatch" style="background:#005a32"></span> 80–100%<br/>
+      <small>NLCD codes: [41, 42, 43, 52, 71] (downsample 8)</small>
+    `;
+    return div;
+  };
+  legend.addTo(map);
+</script>
+</body>
+</html>
