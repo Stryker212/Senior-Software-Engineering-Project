@@ -26,15 +26,25 @@
       font-family: sans-serif;
       font-size: 13px;
       line-height: 1.35;
-      max-width: 340px;
+      max-width: 360px;
     }
     .swatch {
-      display:inline-block;
+      display: inline-block;
       width: 14px;
       height: 10px;
       margin-right: 6px;
       border: 1px solid rgba(0,0,0,0.25);
       vertical-align: middle;
+    }
+    .legend-gradient {
+      width: 180px;
+      height: 12px;
+      border: 1px solid rgba(0,0,0,0.35);
+      margin: 4px 0;
+    }
+    .legend-small {
+      font-size: 11px;
+      color: #444;
     }
   </style>
 </head>
@@ -59,8 +69,12 @@
   const soilOutlineLayer = L.layerGroup();
   const vegGridLayer = L.layerGroup();
 
-  // Optional raster tile layer
-  const slopeTiles = L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 1.00});
+  // Optional raster tile layers
+  const slopeTiles = L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 0.65});
+  const clayTiles  = L.tileLayer('tiles/clay/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
+  const bulkTiles  = L.tileLayer('tiles/bulk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
+  const ksatTiles  = L.tileLayer('tiles/ksat/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
+  const riskTiles  = L.tileLayer('tiles/risk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.60});
 
   function addGeoJsonPoints(url, targetLayer, style) {
     fetch(url)
@@ -78,13 +92,14 @@
     fetch(url)
       .then(r => r.json())
       .then(geo => {
-        const gj = L.geoJSON(geo, { style: style });
+        const gj = L.geoJSON(geo, {
+          style: style
+        });
         gj.addTo(targetLayer);
       })
       .catch(err => console.error("Failed loading", url, err));
   }
 
-  // ---- REQ-36 choropleth (veg density) ----
   function vegColor(d) {
     if (d == null || isNaN(d)) return '#00000000';
     if (d < 0.20) return '#f7fcf5';
@@ -110,7 +125,9 @@
           },
           onEachFeature: (feature, layer) => {
             const p = feature.properties || {};
-            const pct = (p.veg_pct != null) ? p.veg_pct : (p.veg_density != null ? (p.veg_density*100).toFixed(2) : 'n/a');
+            const pct = (p.veg_pct != null)
+              ? p.veg_pct
+              : (p.veg_density != null ? (p.veg_density * 100).toFixed(2) : 'n/a');
             const fire = (p.fire_count != null) ? p.fire_count : 'n/a';
             const slide = (p.slide_count != null) ? p.slide_count : 'n/a';
             layer.bindPopup(
@@ -126,21 +143,98 @@
       .catch(err => console.error("Failed loading", url, err));
   }
 
+  // Dynamic legend definitions
+  const legendDefinitions = {
+    veg: `
+      <b>Vegetation density</b><br/>
+      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
+      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
+      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
+      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
+      <span class="swatch" style="background:#005a32"></span> 80–100%
+    `,
+    risk: `
+      <b>Risk Map (relative index)</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #fff5f0, #fb6a4a, #67000d);"></div>
+      <span class="legend-small">Lower susceptibility &nbsp;&nbsp; Higher susceptibility</span>
+    `,
+    slope: `
+      <b>Slope</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
+      <span class="legend-small">Low slope &nbsp;&nbsp; Steep slope</span>
+    `,
+    clay: `
+      <b>Clay %</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #c2a83e, #8c510a);"></div>
+      <span class="legend-small">Low clay &nbsp;&nbsp; High clay</span>
+    `,
+    bulk: `
+      <b>Bulk density</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #edf8fb, #66c2a4, #238b45);"></div>
+      <span class="legend-small">Low bulk &nbsp;&nbsp; High bulk</span>
+    `,
+    ksat: `
+      <b>Ksat</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
+      <span class="legend-small">Low drainage &nbsp;&nbsp; High drainage</span>
+    `
+  };
+
+  const activeLegends = new Set();
+
+  const legend = L.control({position: 'bottomleft'});
+  legend.onAdd = function(map) {
+    const div = L.DomUtil.create('div', 'legend');
+    div.id = 'dynamic-legend';
+    div.innerHTML = '<b>Legend</b><br/><small>Turn on a layer to see its value bar.</small>';
+    return div;
+  };
+  legend.addTo(map);
+
+  function updateLegend() {
+    const div = document.getElementById('dynamic-legend');
+    if (!div) return;
+
+    let html = '<b>Legend</b><br/>';
+
+    if (activeLegends.size === 0) {
+      html += '<small>Turn on a layer to see its value bar.</small>';
+    } else {
+      activeLegends.forEach(key => {
+        if (legendDefinitions[key]) {
+          html += legendDefinitions[key] + '<br/>';
+        }
+      });
+    }
+
+    div.innerHTML = html;
+  }
+
   // Load layers
   addGeoJsonPoints('data/wildfires_sample.geojson', wildfireLayer, {
-    radius: 2, color: '#e74c3c', weight: 1, fillOpacity: 0.7
+    radius: 2,
+    color: '#e74c3c',
+    weight: 1,
+    fillOpacity: 0.7
   });
 
   addGeoJsonPoints('data/landslides_sample.geojson', landslideLayer, {
-    radius: 2, color: '#3b82f6', weight: 1, fillOpacity: 0.7
+    radius: 2,
+    color: '#3b82f6',
+    weight: 1,
+    fillOpacity: 0.7
   });
 
   addGeoJsonOutlines('data/grid_outline.geojson', gridOutlineLayer, {
-    color: '#111827', weight: 1, fillOpacity: 0.0
+    color: '#111827',
+    weight: 1,
+    fillOpacity: 0.0
   });
 
   addGeoJsonOutlines('data/soil_outline.geojson', soilOutlineLayer, {
-    color: '#16a34a', weight: 1, fillOpacity: 0.0
+    color: '#16a34a',
+    weight: 1,
+    fillOpacity: 0.0
   });
 
   addVegChoropleth('data/grid_veg_density.geojson');
@@ -155,36 +249,46 @@
   };
 
   if (slopeTiles) overlays["Slope (tiles)"] = slopeTiles;
+  if (clayTiles)  overlays["Clay % (tiles)"] = clayTiles;
+  if (bulkTiles)  overlays["Bulk density (tiles)"] = bulkTiles;
+  if (ksatTiles)  overlays["Ksat (tiles)"] = ksatTiles;
+  if (riskTiles)  overlays["Risk Map"] = riskTiles;
 
   L.control.layers({"OpenStreetMap": osm}, overlays, {collapsed: false}).addTo(map);
+
+  // Map active layers to legends
+  const layerLegendMap = new Map();
+  layerLegendMap.set(vegGridLayer, 'veg');
+  if (slopeTiles) layerLegendMap.set(slopeTiles, 'slope');
+  if (clayTiles) layerLegendMap.set(clayTiles, 'clay');
+  if (bulkTiles) layerLegendMap.set(bulkTiles, 'bulk');
+  if (ksatTiles) layerLegendMap.set(ksatTiles, 'ksat');
+  if (riskTiles) layerLegendMap.set(riskTiles, 'risk');
+
+  map.on('overlayadd', function(e) {
+    const key = layerLegendMap.get(e.layer);
+    if (key) {
+      activeLegends.add(key);
+      updateLegend();
+    }
+  });
+
+  map.on('overlayremove', function(e) {
+    const key = layerLegendMap.get(e.layer);
+    if (key) {
+      activeLegends.delete(key);
+      updateLegend();
+    }
+  });
 
   // Start visible layers
   wildfireLayer.addTo(map);
   landslideLayer.addTo(map);
   vegGridLayer.addTo(map);
 
-  // Legend
-  const legend = L.control({position: 'bottomleft'});
-  legend.onAdd = function(map) {
-    const div = L.DomUtil.create('div', 'legend');
-    div.innerHTML = `
-      <b>Legend</b><br/>
-      <span style="color:#e74c3c;">●</span> Wildfires<br/>
-      <span style="color:#3b82f6;">●</span> Landslides<br/>
-      <span style="color:#111827;">—</span> Grid outlines<br/>
-      <span style="color:#16a34a;">—</span> Soil outlines<br/>
-      <br/>
-      <b>Vegetation density (REQ-36)</b><br/>
-      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
-      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
-      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
-      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
-      <span class="swatch" style="background:#005a32"></span> 80–100%<br/>
-      <small>NLCD codes: [41, 42, 43, 52, 71] (downsample 8)</small>
-    `;
-    return div;
-  };
-  legend.addTo(map);
+  // Start legend for visible layer(s)
+  activeLegends.add('veg');
+  updateLegend();
 </script>
 </body>
 </html>

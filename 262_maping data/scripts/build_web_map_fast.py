@@ -5,7 +5,12 @@ FAST local webpage map:
 - Samples huge point layers (browser-safe)
 - Simplifies polygon layers (browser-safe)
 - Adds REQ-36: Grid vegetation density choropleth (computed from NLCD raster)
-- Can include outline-only layers + optional raster XYZ tiles
+- Adds optional raster XYZ tile toggles for:
+    - slope
+    - clay
+    - bulk density
+    - ksat
+    - risk map
 
 Run:
     python scripts/build_web_map_fast.py
@@ -39,17 +44,21 @@ LANDSLIDE_POINTS = r"Data/Events/landslide_points.geojson"
 
 # Grid polygons (vector)
 GRID_GPKG = r"Data/Base/grid_fire_slide_counts_2992.gpkg"
-GRID_LAYER_NAME = None  # set to layer name string if your gpkg has multiple layers
+GRID_LAYER_NAME = None
 
-# Soil polygons (vector)  (outline-only)
+# Soil polygons (vector outline only)
 SOIL_GPKG = r"Data/Derived/soil_muaggatt.gpkg"
-SOIL_LAYER_NAME = None  # set if multiple layers
+SOIL_LAYER_NAME = None
 
 # NLCD raster (categorical)
 NLCD_RASTER = r"Data/Vegetation/nlcd_2016_2992.tif"
 
-# Optional raster tiles (pre-generated OR built with GDAL CLI)
+# Optional raster sources
 SLOPE_RASTER = r"Data/Raster/slope_2992.tif"
+CLAY_RASTER = r"Data/Derived/clay_0_100cm_2992.tif"
+BULK_RASTER = r"Data/Derived/bulk_density_0_100cm_2992.tif"
+KSAT_RASTER = r"Data/Derived/ksat_0_100cm_2992.tif"
+RISK_RASTER = r"Data/Derived/risk_map.tif"
 
 # Output web folder
 OUT_DIR = Path("outputs/web")
@@ -57,29 +66,34 @@ DATA_DIR = OUT_DIR / "data"
 TILES_DIR = OUT_DIR / "tiles"
 
 # Performance knobs
-MAX_POINTS_PER_LAYER = 150_000        # points to keep (per point layer)
-MAX_POLYGONS_PER_LAYER = 60_000       # sample if outline layers are enormous
-MAX_GRID_CELLS = 100_000              # safety cap for veg density run
-POLY_SIMPLIFY_TOL_DEG = 0.0008        # simplification tolerance in EPSG:4326 degrees
+MAX_POINTS_PER_LAYER = 150_000
+MAX_POLYGONS_PER_LAYER = 60_000
+MAX_GRID_CELLS = 100_000
+POLY_SIMPLIFY_TOL_DEG = 0.0008
 
 # Web map expects lat/lon GeoJSON
 WEB_GEOJSON_CRS = "EPSG:4326"
 
 # REQ-36 vegetation density settings
-VEG_CODES = {41, 42, 43, 52, 71}  # natural vegetation only
-# VEG_CODES = {41, 42, 43, 52, 71, 81, 82}  # include pasture/crops too
-
-# Downsample NLCD for faster zonal stats (bigger = faster, slightly less accurate)
+VEG_CODES = {41, 42, 43, 52, 71}
 NLCD_DOWNSAMPLE = 8
 
 # Raster tiling settings (only if GDAL CLI tools work)
-BUILD_SLOPE_TILES = False            # True only if gdalwarp/gdal2tiles are installed
+BUILD_SLOPE_TILES = False
+BUILD_CLAY_TILES = False
+BUILD_BULK_TILES = False
+BUILD_KSAT_TILES = False
+BUILD_RISK_TILES = False
+
 TILE_ZOOM_MIN = 5
 TILE_ZOOM_MAX = 10
 
-# If you already generated tiles in QGIS, leave BUILD_SLOPE_TILES=False
-# and set this True so the map loads them:
-USE_EXISTING_SLOPE_TILES = True      # expects outputs/web/tiles/slope/{z}/{x}/{y}.png
+# If you already generated tiles in QGIS, leave BUILD_* False
+USE_EXISTING_SLOPE_TILES = True
+USE_EXISTING_CLAY_TILES = True
+USE_EXISTING_BULK_TILES = True
+USE_EXISTING_KSAT_TILES = True
+USE_EXISTING_RISK_TILES = True
 
 
 # =========================
@@ -285,7 +299,6 @@ def load_grid_veg_density_web() -> gpd.GeoDataFrame:
             keep_cols.insert(1, col)
             break
 
-    # also include counts if they exist
     for col in ["fire_count", "slide_count", "count", "elev"]:
         if col in grid_web.columns and col not in keep_cols:
             keep_cols.append(col)
@@ -296,7 +309,14 @@ def load_grid_veg_density_web() -> gpd.GeoDataFrame:
 # =========================
 # HTML
 # =========================
-def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
+def write_index_html(
+    out_path: Path,
+    has_slope_tiles: bool,
+    has_clay_tiles: bool,
+    has_bulk_tiles: bool,
+    has_ksat_tiles: bool,
+    has_risk_tiles: bool,
+) -> None:
     html = f"""<!doctype html>
 <html>
 <head>
@@ -325,15 +345,25 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
       font-family: sans-serif;
       font-size: 13px;
       line-height: 1.35;
-      max-width: 340px;
+      max-width: 360px;
     }}
     .swatch {{
-      display:inline-block;
+      display: inline-block;
       width: 14px;
       height: 10px;
       margin-right: 6px;
       border: 1px solid rgba(0,0,0,0.25);
       vertical-align: middle;
+    }}
+    .legend-gradient {{
+      width: 180px;
+      height: 12px;
+      border: 1px solid rgba(0,0,0,0.35);
+      margin: 4px 0;
+    }}
+    .legend-small {{
+      font-size: 11px;
+      color: #444;
     }}
   </style>
 </head>
@@ -358,8 +388,12 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
   const soilOutlineLayer = L.layerGroup();
   const vegGridLayer = L.layerGroup();
 
-  // Optional raster tile layer
-  const slopeTiles = {("L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 1.00})" if has_slope_tiles else "null")};
+  // Optional raster tile layers
+  const slopeTiles = {("L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 0.65})" if has_slope_tiles else "null")};
+  const clayTiles  = {("L.tileLayer('tiles/clay/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_clay_tiles else "null")};
+  const bulkTiles  = {("L.tileLayer('tiles/bulk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_bulk_tiles else "null")};
+  const ksatTiles  = {("L.tileLayer('tiles/ksat/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_ksat_tiles else "null")};
+  const riskTiles  = {("L.tileLayer('tiles/risk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.60})" if has_risk_tiles else "null")};
 
   function addGeoJsonPoints(url, targetLayer, style) {{
     fetch(url)
@@ -377,13 +411,14 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
     fetch(url)
       .then(r => r.json())
       .then(geo => {{
-        const gj = L.geoJSON(geo, {{ style: style }});
+        const gj = L.geoJSON(geo, {{
+          style: style
+        }});
         gj.addTo(targetLayer);
       }})
       .catch(err => console.error("Failed loading", url, err));
   }}
 
-  // ---- REQ-36 choropleth (veg density) ----
   function vegColor(d) {{
     if (d == null || isNaN(d)) return '#00000000';
     if (d < 0.20) return '#f7fcf5';
@@ -409,7 +444,9 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
           }},
           onEachFeature: (feature, layer) => {{
             const p = feature.properties || {{}};
-            const pct = (p.veg_pct != null) ? p.veg_pct : (p.veg_density != null ? (p.veg_density*100).toFixed(2) : 'n/a');
+            const pct = (p.veg_pct != null)
+              ? p.veg_pct
+              : (p.veg_density != null ? (p.veg_density * 100).toFixed(2) : 'n/a');
             const fire = (p.fire_count != null) ? p.fire_count : 'n/a';
             const slide = (p.slide_count != null) ? p.slide_count : 'n/a';
             layer.bindPopup(
@@ -425,21 +462,98 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
       .catch(err => console.error("Failed loading", url, err));
   }}
 
+  // Dynamic legend definitions
+  const legendDefinitions = {{
+    veg: `
+      <b>Vegetation density</b><br/>
+      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
+      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
+      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
+      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
+      <span class="swatch" style="background:#005a32"></span> 80–100%
+    `,
+    risk: `
+      <b>Risk Map (relative index)</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #fff5f0, #fb6a4a, #67000d);"></div>
+      <span class="legend-small">Lower susceptibility &nbsp;&nbsp; Higher susceptibility</span>
+    `,
+    slope: `
+      <b>Slope</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
+      <span class="legend-small">Low slope &nbsp;&nbsp; Steep slope</span>
+    `,
+    clay: `
+      <b>Clay %</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #c2a83e, #8c510a);"></div>
+      <span class="legend-small">Low clay &nbsp;&nbsp; High clay</span>
+    `,
+    bulk: `
+      <b>Bulk density</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #edf8fb, #66c2a4, #238b45);"></div>
+      <span class="legend-small">Low bulk &nbsp;&nbsp; High bulk</span>
+    `,
+    ksat: `
+      <b>Ksat</b><br/>
+      <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
+      <span class="legend-small">Low drainage &nbsp;&nbsp; High drainage</span>
+    `
+  }};
+
+  const activeLegends = new Set();
+
+  const legend = L.control({{position: 'bottomleft'}});
+  legend.onAdd = function(map) {{
+    const div = L.DomUtil.create('div', 'legend');
+    div.id = 'dynamic-legend';
+    div.innerHTML = '<b>Legend</b><br/><small>Turn on a layer to see its value bar.</small>';
+    return div;
+  }};
+  legend.addTo(map);
+
+  function updateLegend() {{
+    const div = document.getElementById('dynamic-legend');
+    if (!div) return;
+
+    let html = '<b>Legend</b><br/>';
+
+    if (activeLegends.size === 0) {{
+      html += '<small>Turn on a layer to see its value bar.</small>';
+    }} else {{
+      activeLegends.forEach(key => {{
+        if (legendDefinitions[key]) {{
+          html += legendDefinitions[key] + '<br/>';
+        }}
+      }});
+    }}
+
+    div.innerHTML = html;
+  }}
+
   // Load layers
   addGeoJsonPoints('data/wildfires_sample.geojson', wildfireLayer, {{
-    radius: 2, color: '#e74c3c', weight: 1, fillOpacity: 0.7
+    radius: 2,
+    color: '#e74c3c',
+    weight: 1,
+    fillOpacity: 0.7
   }});
 
   addGeoJsonPoints('data/landslides_sample.geojson', landslideLayer, {{
-    radius: 2, color: '#3b82f6', weight: 1, fillOpacity: 0.7
+    radius: 2,
+    color: '#3b82f6',
+    weight: 1,
+    fillOpacity: 0.7
   }});
 
   addGeoJsonOutlines('data/grid_outline.geojson', gridOutlineLayer, {{
-    color: '#111827', weight: 1, fillOpacity: 0.0
+    color: '#111827',
+    weight: 1,
+    fillOpacity: 0.0
   }});
 
   addGeoJsonOutlines('data/soil_outline.geojson', soilOutlineLayer, {{
-    color: '#16a34a', weight: 1, fillOpacity: 0.0
+    color: '#16a34a',
+    weight: 1,
+    fillOpacity: 0.0
   }});
 
   addVegChoropleth('data/grid_veg_density.geojson');
@@ -454,36 +568,46 @@ def write_index_html(out_path: Path, has_slope_tiles: bool) -> None:
   }};
 
   if (slopeTiles) overlays["Slope (tiles)"] = slopeTiles;
+  if (clayTiles)  overlays["Clay % (tiles)"] = clayTiles;
+  if (bulkTiles)  overlays["Bulk density (tiles)"] = bulkTiles;
+  if (ksatTiles)  overlays["Ksat (tiles)"] = ksatTiles;
+  if (riskTiles)  overlays["Risk Map"] = riskTiles;
 
   L.control.layers({{"OpenStreetMap": osm}}, overlays, {{collapsed: false}}).addTo(map);
+
+  // Map active layers to legends
+  const layerLegendMap = new Map();
+  layerLegendMap.set(vegGridLayer, 'veg');
+  if (slopeTiles) layerLegendMap.set(slopeTiles, 'slope');
+  if (clayTiles) layerLegendMap.set(clayTiles, 'clay');
+  if (bulkTiles) layerLegendMap.set(bulkTiles, 'bulk');
+  if (ksatTiles) layerLegendMap.set(ksatTiles, 'ksat');
+  if (riskTiles) layerLegendMap.set(riskTiles, 'risk');
+
+  map.on('overlayadd', function(e) {{
+    const key = layerLegendMap.get(e.layer);
+    if (key) {{
+      activeLegends.add(key);
+      updateLegend();
+    }}
+  }});
+
+  map.on('overlayremove', function(e) {{
+    const key = layerLegendMap.get(e.layer);
+    if (key) {{
+      activeLegends.delete(key);
+      updateLegend();
+    }}
+  }});
 
   // Start visible layers
   wildfireLayer.addTo(map);
   landslideLayer.addTo(map);
   vegGridLayer.addTo(map);
 
-  // Legend
-  const legend = L.control({{position: 'bottomleft'}});
-  legend.onAdd = function(map) {{
-    const div = L.DomUtil.create('div', 'legend');
-    div.innerHTML = `
-      <b>Legend</b><br/>
-      <span style="color:#e74c3c;">●</span> Wildfires<br/>
-      <span style="color:#3b82f6;">●</span> Landslides<br/>
-      <span style="color:#111827;">—</span> Grid outlines<br/>
-      <span style="color:#16a34a;">—</span> Soil outlines<br/>
-      <br/>
-      <b>Vegetation density (REQ-36)</b><br/>
-      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
-      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
-      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
-      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
-      <span class="swatch" style="background:#005a32"></span> 80–100%<br/>
-      <small>NLCD codes: {sorted(list(VEG_CODES))} (downsample {NLCD_DOWNSAMPLE})</small>
-    `;
-    return div;
-  }};
-  legend.addTo(map);
+  // Start legend for visible layer(s)
+  activeLegends.add('veg');
+  updateLegend();
 </script>
 </body>
 </html>
@@ -503,7 +627,7 @@ def main() -> None:
     write_geojson(wf, DATA_DIR / "wildfires_sample.geojson")
     write_geojson(ls, DATA_DIR / "landslides_sample.geojson")
 
-    # 2) Grid outline (outline-only)
+    # 2) Grid outline
     if os.path.exists(GRID_GPKG):
         grid_outline = load_and_simplify_polygons(GRID_GPKG, GRID_LAYER_NAME, MAX_POLYGONS_PER_LAYER)
         write_geojson(grid_outline, DATA_DIR / "grid_outline.geojson")
@@ -511,7 +635,7 @@ def main() -> None:
         print("Grid not found:", GRID_GPKG)
         write_empty_geojson(DATA_DIR / "grid_outline.geojson")
 
-    # 3) Soil outline (outline-only)
+    # 3) Soil outline
     if os.path.exists(SOIL_GPKG):
         soil_outline = load_and_simplify_polygons(SOIL_GPKG, SOIL_LAYER_NAME, MAX_POLYGONS_PER_LAYER)
         write_geojson(soil_outline, DATA_DIR / "soil_outline.geojson")
@@ -519,7 +643,7 @@ def main() -> None:
         print("Soil not found:", SOIL_GPKG)
         write_empty_geojson(DATA_DIR / "soil_outline.geojson")
 
-    # 4) REQ-36 Veg density choropleth
+    # 4) Veg density choropleth
     if os.path.exists(GRID_GPKG) and os.path.exists(NLCD_RASTER):
         veg_grid = load_grid_veg_density_web()
         write_geojson(veg_grid, DATA_DIR / "grid_veg_density.geojson")
@@ -527,23 +651,57 @@ def main() -> None:
         print("Missing GRID or NLCD for veg density.")
         write_empty_geojson(DATA_DIR / "grid_veg_density.geojson")
 
-    # 5) Slope tiles (optional)
+    # 5) Optional tiles
     has_slope_tiles = False
+    has_clay_tiles = False
+    has_bulk_tiles = False
+    has_ksat_tiles = False
+    has_risk_tiles = False
 
-    if BUILD_SLOPE_TILES:
-        if os.path.exists(SLOPE_RASTER):
-            build_xyz_tiles(SLOPE_RASTER, TILES_DIR, "slope")
-            has_slope_tiles = True
-        else:
-            print("Slope raster not found:", SLOPE_RASTER)
+    if BUILD_SLOPE_TILES and os.path.exists(SLOPE_RASTER):
+        build_xyz_tiles(SLOPE_RASTER, TILES_DIR, "slope")
+        has_slope_tiles = True
 
-    if USE_EXISTING_SLOPE_TILES:
-        # Expect tiles already exist at outputs/web/tiles/slope/...
-        if (TILES_DIR / "slope").exists():
-            has_slope_tiles = True
+    if BUILD_CLAY_TILES and os.path.exists(CLAY_RASTER):
+        build_xyz_tiles(CLAY_RASTER, TILES_DIR, "clay")
+        has_clay_tiles = True
+
+    if BUILD_BULK_TILES and os.path.exists(BULK_RASTER):
+        build_xyz_tiles(BULK_RASTER, TILES_DIR, "bulk")
+        has_bulk_tiles = True
+
+    if BUILD_KSAT_TILES and os.path.exists(KSAT_RASTER):
+        build_xyz_tiles(KSAT_RASTER, TILES_DIR, "ksat")
+        has_ksat_tiles = True
+
+    if BUILD_RISK_TILES and os.path.exists(RISK_RASTER):
+        build_xyz_tiles(RISK_RASTER, TILES_DIR, "risk")
+        has_risk_tiles = True
+
+    if USE_EXISTING_SLOPE_TILES and (TILES_DIR / "slope").exists():
+        has_slope_tiles = True
+
+    if USE_EXISTING_CLAY_TILES and (TILES_DIR / "clay").exists():
+        has_clay_tiles = True
+
+    if USE_EXISTING_BULK_TILES and (TILES_DIR / "bulk").exists():
+        has_bulk_tiles = True
+
+    if USE_EXISTING_KSAT_TILES and (TILES_DIR / "ksat").exists():
+        has_ksat_tiles = True
+
+    if USE_EXISTING_RISK_TILES and (TILES_DIR / "risk").exists():
+        has_risk_tiles = True
 
     # 6) Webpage
-    write_index_html(OUT_DIR / "index.html", has_slope_tiles)
+    write_index_html(
+        OUT_DIR / "index.html",
+        has_slope_tiles,
+        has_clay_tiles,
+        has_bulk_tiles,
+        has_ksat_tiles,
+        has_risk_tiles,
+    )
 
     print("\nDONE.")
     print("Serve locally with:")

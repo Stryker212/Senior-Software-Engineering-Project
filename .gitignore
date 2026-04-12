@@ -75,3 +75,18 @@ gitUpload/
 *.zip
 *.gdb
 *.aux.xml
+
+# ===== PROJECT-SPECIFIC LARGE FILES (ADD THIS) =====
+
+# Ignore generated outputs (your biggest issue)
+262_maping data/outputs/
+
+# Ignore this specific large geodatabase
+geovis_app/data/gNATSGO_OR.gdb/
+
+# Ignore large rasters anywhere
+*.tif
+*.tiff
+
+# Ignore generated web maps
+*.html
