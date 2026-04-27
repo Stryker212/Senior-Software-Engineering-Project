@@ -54,7 +54,7 @@ Data on previous wildland fires is introduced by locating areas that have experi
   https://github.com/Stryker212/Senior-Software-Engineering-Project/blob/main/README.md  
 
 - Final Analytical Report:  
-  Final Analytical Report: Capstone  
+  https://docs.google.com/document/d/1nJzGfkT1cZTCUHmnIKcMGhW4X0LI2VPyk89pesMLLCs/edit?tab=t.0
 
 ---
 
