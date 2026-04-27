@@ -24,23 +24,8 @@ Download and extract the folder.
 
 After extraction, place the **Data folder** in the project root so the structure looks like this:
 
-262_maping data/
-│
-├── Data/
-│ ├── Raster/
-│ │ ├── slope_2992.tif
-│ │ ├── nlcd_2016_2992.tif
-│ │
-│ ├── Vegetation/
-│ ├── Base/
-│ ├── Events/
-│ │
-│ └── other datasets...
-│
-├── outputs/
-├── scripts/
-├── themes/
-├── README.md
+<img width="191" height="357" alt="image" src="https://github.com/user-attachments/assets/34edbacd-b331-4833-927b-226928254d6c" />
+
 
 
 # To run Webpage
