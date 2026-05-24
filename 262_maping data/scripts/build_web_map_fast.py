@@ -58,7 +58,7 @@ SLOPE_RASTER = r"Data/Raster/slope_2992.tif"
 CLAY_RASTER = r"Data/Derived/clay_0_100cm_2992.tif"
 BULK_RASTER = r"Data/Derived/bulk_density_0_100cm_2992.tif"
 KSAT_RASTER = r"Data/Derived/ksat_0_100cm_2992.tif"
-RISK_RASTER = r"Data/Derived/risk_map.tif"
+RISK_RASTER = r"Data/Derived/FactorOfSaftyV2.tif"
 
 # Output web folder
 OUT_DIR = Path("outputs/web")
@@ -316,6 +316,7 @@ def write_index_html(
     has_bulk_tiles: bool,
     has_ksat_tiles: bool,
     has_risk_tiles: bool,
+    has_fos_tiles: bool,
 ) -> None:
     html = f"""<!doctype html>
 <html>
@@ -337,6 +338,9 @@ def write_index_html(
   <style>
     html, body {{ height: 100%; margin: 0; }}
     #map {{ height: 100%; width: 100%; }}
+    .leaflet-tile {{
+      image-rendering: pixelated;
+    }}
     .legend {{
       background: white;
       padding: 10px 12px;
@@ -344,8 +348,8 @@ def write_index_html(
       box-shadow: 0 1px 8px rgba(0,0,0,0.25);
       font-family: sans-serif;
       font-size: 13px;
-      line-height: 1.35;
-      max-width: 360px;
+      line-height: 1.4;
+      max-width: 260px;
     }}
     .swatch {{
       display: inline-block;
@@ -356,10 +360,17 @@ def write_index_html(
       vertical-align: middle;
     }}
     .legend-gradient {{
-      width: 180px;
+      width: 100%;
       height: 12px;
       border: 1px solid rgba(0,0,0,0.35);
       margin: 4px 0;
+    }}
+    .legend-scale {{
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 8px;   /* spacing between legends */
     }}
     .legend-small {{
       font-size: 11px;
@@ -373,7 +384,8 @@ def write_index_html(
 <script>
   const map = L.map('map', {{
     center: [44.0, -120.5],
-    zoom: 6
+    zoom: 6,
+    fadeAnimation: false
   }});
 
   const osm = L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
@@ -389,12 +401,12 @@ def write_index_html(
   const vegGridLayer = L.layerGroup();
 
   // Optional raster tile layers
-  const slopeTiles = {("L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 0.65})" if has_slope_tiles else "null")};
-  const clayTiles  = {("L.tileLayer('tiles/clay/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_clay_tiles else "null")};
-  const bulkTiles  = {("L.tileLayer('tiles/bulk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_bulk_tiles else "null")};
-  const ksatTiles  = {("L.tileLayer('tiles/ksat/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65})" if has_ksat_tiles else "null")};
-  const riskTiles  = {("L.tileLayer('tiles/risk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.60})" if has_risk_tiles else "null")};
-
+  const slopeTiles = {("L.tileLayer('tiles/slope/{z}/{x}/{y}.png?v=2', {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75})" if has_slope_tiles else "null")};
+  const clayTiles  = {("L.tileLayer('tiles/clay/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75})" if has_clay_tiles else "null")};
+  const bulkTiles  = {("L.tileLayer('tiles/bulk/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75})" if has_bulk_tiles else "null")};
+  const ksatTiles  = {("L.tileLayer('tiles/ksat/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75})" if has_ksat_tiles else "null")};
+  const fosTiles  = {("L.tileLayer('tiles/FOS/{z}/{x}/{y}.png',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75})" if has_fos_tiles else "null")};
+  
   function addGeoJsonPoints(url, targetLayer, style) {{
     fetch(url)
       .then(r => r.json())
@@ -464,39 +476,58 @@ def write_index_html(
 
   // Dynamic legend definitions
   const legendDefinitions = {{
-    veg: `
-      <b>Vegetation density</b><br/>
-      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
-      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
-      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
-      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
-      <span class="swatch" style="background:#005a32"></span> 80–100%
-    `,
-    risk: `
-      <b>Risk Map (relative index)</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #fff5f0, #fb6a4a, #67000d);"></div>
-      <span class="legend-small">Lower susceptibility &nbsp;&nbsp; Higher susceptibility</span>
-    `,
-    slope: `
-      <b>Slope</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
-      <span class="legend-small">Low slope &nbsp;&nbsp; Steep slope</span>
-    `,
-    clay: `
-      <b>Clay %</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #c2a83e, #8c510a);"></div>
-      <span class="legend-small">Low clay &nbsp;&nbsp; High clay</span>
-    `,
-    bulk: `
-      <b>Bulk density</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #edf8fb, #66c2a4, #238b45);"></div>
-      <span class="legend-small">Low bulk &nbsp;&nbsp; High bulk</span>
-    `,
-    ksat: `
-      <b>Ksat</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
-      <span class="legend-small">Low drainage &nbsp;&nbsp; High drainage</span>
-    `
+     veg: `
+    <b>Vegetation Density (%)</b><br/>
+    <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
+    <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
+    <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
+    <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
+    <span class="swatch" style="background:#005a32"></span> 80–100%
+  `,
+ slope: `
+    <b>Slope (degrees)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
+    <div class="legend-scale">
+      <span>0°</span>
+      <span>46°</span>
+    </div>
+  `,
+
+  clay: `
+    <b>Clay Content (%)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #fff7ec, #fdd49e, #fc8d59, #d7301f, #7f0000);"></div>
+    <div class="legend-scale">
+      <span>0%</span>
+      <span>66.5%</span>
+    </div>
+  `,
+
+  bulk: `
+    <b>Bulk Density (g/cm³)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #fee0ef, #df65b0, #ce1256);"></div>
+    <div class="legend-scale">
+      <span>Low</span>
+      <span>High</span>
+    </div>
+  `,
+
+  ksat: `
+    <b>Ksat (Hydraulic Conductivity)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
+    <div class="legend-scale">
+      <span>Low drainage</span>
+      <span>High drainage</span>
+    </div>
+  `,
+
+  fos: `
+    <b>Factor of Safety</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #d73027, #ffffbf, #1a9850);"></div>
+    <div class="legend-scale">
+      <span>Low stability (FoS < 1)</span>
+      <span>High stability (FoS > 1)</span>
+    </div>
+  `,
   }};
 
   const activeLegends = new Set();
@@ -571,7 +602,7 @@ def write_index_html(
   if (clayTiles)  overlays["Clay % (tiles)"] = clayTiles;
   if (bulkTiles)  overlays["Bulk density (tiles)"] = bulkTiles;
   if (ksatTiles)  overlays["Ksat (tiles)"] = ksatTiles;
-  if (riskTiles)  overlays["Risk Map"] = riskTiles;
+  if (fosTiles) overlays["Factor of Safety Map"] = fosTiles;
 
   L.control.layers({{"OpenStreetMap": osm}}, overlays, {{collapsed: false}}).addTo(map);
 
@@ -582,7 +613,7 @@ def write_index_html(
   if (clayTiles) layerLegendMap.set(clayTiles, 'clay');
   if (bulkTiles) layerLegendMap.set(bulkTiles, 'bulk');
   if (ksatTiles) layerLegendMap.set(ksatTiles, 'ksat');
-  if (riskTiles) layerLegendMap.set(riskTiles, 'risk');
+  if (fosTiles) layerLegendMap.set(fosTiles, 'fos');
 
   map.on('overlayadd', function(e) {{
     const key = layerLegendMap.get(e.layer);
@@ -657,41 +688,45 @@ def main() -> None:
     has_bulk_tiles = False
     has_ksat_tiles = False
     has_risk_tiles = False
+    has_fos_tiles = False
 
     if BUILD_SLOPE_TILES and os.path.exists(SLOPE_RASTER):
-        build_xyz_tiles(SLOPE_RASTER, TILES_DIR, "slope")
-        has_slope_tiles = True
+      build_xyz_tiles(SLOPE_RASTER, TILES_DIR, "slope")
+      has_slope_tiles = True
 
     if BUILD_CLAY_TILES and os.path.exists(CLAY_RASTER):
-        build_xyz_tiles(CLAY_RASTER, TILES_DIR, "clay")
-        has_clay_tiles = True
+      build_xyz_tiles(CLAY_RASTER, TILES_DIR, "clay")
+      has_clay_tiles = True
 
     if BUILD_BULK_TILES and os.path.exists(BULK_RASTER):
-        build_xyz_tiles(BULK_RASTER, TILES_DIR, "bulk")
-        has_bulk_tiles = True
+      build_xyz_tiles(BULK_RASTER, TILES_DIR, "bulk")
+      has_bulk_tiles = True
 
     if BUILD_KSAT_TILES and os.path.exists(KSAT_RASTER):
-        build_xyz_tiles(KSAT_RASTER, TILES_DIR, "ksat")
-        has_ksat_tiles = True
+      build_xyz_tiles(KSAT_RASTER, TILES_DIR, "ksat")
+      has_ksat_tiles = True
 
     if BUILD_RISK_TILES and os.path.exists(RISK_RASTER):
-        build_xyz_tiles(RISK_RASTER, TILES_DIR, "risk")
-        has_risk_tiles = True
+      build_xyz_tiles(RISK_RASTER, TILES_DIR, "risk")
+      has_risk_tiles = True
 
     if USE_EXISTING_SLOPE_TILES and (TILES_DIR / "slope").exists():
-        has_slope_tiles = True
+      has_slope_tiles = True
 
     if USE_EXISTING_CLAY_TILES and (TILES_DIR / "clay").exists():
-        has_clay_tiles = True
+      has_clay_tiles = True
 
     if USE_EXISTING_BULK_TILES and (TILES_DIR / "bulk").exists():
-        has_bulk_tiles = True
+      has_bulk_tiles = True
 
     if USE_EXISTING_KSAT_TILES and (TILES_DIR / "ksat").exists():
-        has_ksat_tiles = True
+      has_ksat_tiles = True
 
     if USE_EXISTING_RISK_TILES and (TILES_DIR / "risk").exists():
-        has_risk_tiles = True
+      has_risk_tiles = True
+
+    if (TILES_DIR / "FOS").exists():
+      has_fos_tiles = True
 
     # 6) Webpage
     write_index_html(
@@ -701,6 +736,7 @@ def main() -> None:
         has_bulk_tiles,
         has_ksat_tiles,
         has_risk_tiles,
+        has_fos_tiles,
     )
 
     print("\nDONE.")
