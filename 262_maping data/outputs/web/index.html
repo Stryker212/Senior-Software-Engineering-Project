@@ -18,6 +18,9 @@
   <style>
     html, body { height: 100%; margin: 0; }
     #map { height: 100%; width: 100%; }
+    .leaflet-tile {
+      image-rendering: pixelated;
+    }
     .legend {
       background: white;
       padding: 10px 12px;
@@ -25,8 +28,8 @@
       box-shadow: 0 1px 8px rgba(0,0,0,0.25);
       font-family: sans-serif;
       font-size: 13px;
-      line-height: 1.35;
-      max-width: 360px;
+      line-height: 1.4;
+      max-width: 260px;
     }
     .swatch {
       display: inline-block;
@@ -37,10 +40,17 @@
       vertical-align: middle;
     }
     .legend-gradient {
-      width: 180px;
+      width: 100%;
       height: 12px;
       border: 1px solid rgba(0,0,0,0.35);
       margin: 4px 0;
+    }
+    .legend-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #444;
+    margin-bottom: 8px;   /* spacing between legends */
     }
     .legend-small {
       font-size: 11px;
@@ -54,7 +64,8 @@
 <script>
   const map = L.map('map', {
     center: [44.0, -120.5],
-    zoom: 6
+    zoom: 6,
+    fadeAnimation: false
   });
 
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -70,12 +81,12 @@
   const vegGridLayer = L.layerGroup();
 
   // Optional raster tile layers
-  const slopeTiles = L.tileLayer('tiles/slope/{z}/{x}/{y}.png', {maxZoom: 18, opacity: 0.65});
-  const clayTiles  = L.tileLayer('tiles/clay/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
-  const bulkTiles  = L.tileLayer('tiles/bulk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
-  const ksatTiles  = L.tileLayer('tiles/ksat/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.65});
-  const riskTiles  = L.tileLayer('tiles/risk/{z}/{x}/{y}.png',  {maxZoom: 18, opacity: 0.60});
-
+  const slopeTiles = L.tileLayer('tiles/slope/{z}/{x}/{y}.png?v=2', {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75});
+  const clayTiles  = L.tileLayer('tiles/clay/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75});
+  const bulkTiles  = L.tileLayer('tiles/bulk/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75});
+  const ksatTiles  = L.tileLayer('tiles/ksat/{z}/{x}/{y}.png?v=2',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75});
+  const fosTiles  = L.tileLayer('tiles/FOS/{z}/{x}/{y}.png',  {maxZoom: 10, minZoom: 5, maxNativeZoom: 10, opacity: 0.75});
+  
   function addGeoJsonPoints(url, targetLayer, style) {
     fetch(url)
       .then(r => r.json())
@@ -145,39 +156,58 @@
 
   // Dynamic legend definitions
   const legendDefinitions = {
-    veg: `
-      <b>Vegetation density</b><br/>
-      <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
-      <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
-      <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
-      <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
-      <span class="swatch" style="background:#005a32"></span> 80–100%
-    `,
-    risk: `
-      <b>Risk Map (relative index)</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #fff5f0, #fb6a4a, #67000d);"></div>
-      <span class="legend-small">Lower susceptibility &nbsp;&nbsp; Higher susceptibility</span>
-    `,
-    slope: `
-      <b>Slope</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
-      <span class="legend-small">Low slope &nbsp;&nbsp; Steep slope</span>
-    `,
-    clay: `
-      <b>Clay %</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #c2a83e, #8c510a);"></div>
-      <span class="legend-small">Low clay &nbsp;&nbsp; High clay</span>
-    `,
-    bulk: `
-      <b>Bulk density</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #edf8fb, #66c2a4, #238b45);"></div>
-      <span class="legend-small">Low bulk &nbsp;&nbsp; High bulk</span>
-    `,
-    ksat: `
-      <b>Ksat</b><br/>
-      <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
-      <span class="legend-small">Low drainage &nbsp;&nbsp; High drainage</span>
-    `
+     veg: `
+    <b>Vegetation Density (%)</b><br/>
+    <span class="swatch" style="background:#f7fcf5"></span> 0–20%<br/>
+    <span class="swatch" style="background:#c7e9c0"></span> 20–40%<br/>
+    <span class="swatch" style="background:#74c476"></span> 40–60%<br/>
+    <span class="swatch" style="background:#238b45"></span> 60–80%<br/>
+    <span class="swatch" style="background:#005a32"></span> 80–100%
+  `,
+ slope: `
+    <b>Slope (degrees)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #ffffcc, #fd8d3c, #800026);"></div>
+    <div class="legend-scale">
+      <span>0°</span>
+      <span>46°</span>
+    </div>
+  `,
+
+  clay: `
+    <b>Clay Content (%)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #fff7ec, #fdd49e, #fc8d59, #d7301f, #7f0000);"></div>
+    <div class="legend-scale">
+      <span>0%</span>
+      <span>66.5%</span>
+    </div>
+  `,
+
+  bulk: `
+    <b>Bulk Density (g/cm³)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #fee0ef, #df65b0, #ce1256);"></div>
+    <div class="legend-scale">
+      <span>Low</span>
+      <span>High</span>
+    </div>
+  `,
+
+  ksat: `
+    <b>Ksat (Hydraulic Conductivity)</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #f7fcfd, #67a9cf, #023858);"></div>
+    <div class="legend-scale">
+      <span>Low drainage</span>
+      <span>High drainage</span>
+    </div>
+  `,
+
+  fos: `
+    <b>Factor of Safety</b>
+    <div class="legend-gradient" style="background:linear-gradient(to right, #d73027, #ffffbf, #1a9850);"></div>
+    <div class="legend-scale">
+      <span>Low stability (FoS < 1)</span>
+      <span>High stability (FoS > 1)</span>
+    </div>
+  `,
   };
 
   const activeLegends = new Set();
@@ -252,7 +282,7 @@
   if (clayTiles)  overlays["Clay % (tiles)"] = clayTiles;
   if (bulkTiles)  overlays["Bulk density (tiles)"] = bulkTiles;
   if (ksatTiles)  overlays["Ksat (tiles)"] = ksatTiles;
-  if (riskTiles)  overlays["Risk Map"] = riskTiles;
+  if (fosTiles) overlays["Factor of Safety Map"] = fosTiles;
 
   L.control.layers({"OpenStreetMap": osm}, overlays, {collapsed: false}).addTo(map);
 
@@ -263,7 +293,7 @@
   if (clayTiles) layerLegendMap.set(clayTiles, 'clay');
   if (bulkTiles) layerLegendMap.set(bulkTiles, 'bulk');
   if (ksatTiles) layerLegendMap.set(ksatTiles, 'ksat');
-  if (riskTiles) layerLegendMap.set(riskTiles, 'risk');
+  if (fosTiles) layerLegendMap.set(fosTiles, 'fos');
 
   map.on('overlayadd', function(e) {
     const key = layerLegendMap.get(e.layer);
